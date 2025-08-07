@@ -3,7 +3,7 @@ import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 
 const CartButton = () => {
-    const totalItems = 0;
+    const totalItems = 10;
     return (
         <TouchableOpacity className="cart-btn" onPress={() => console.log("Cart Button Pressed")}>
             <Image

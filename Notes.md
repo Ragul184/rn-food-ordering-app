@@ -326,3 +326,24 @@
       </View>
     );
     ```
+
+50. Now we are going to database setup for different categories of food. We have created a collection for categories and added name and description attributes. Also, we are going to create menu collection for adding different food items. Creating name, description, image_url, rating, calories, protein, price, categories attributes. Created a two-way relation from menu to categories collection and it will be many-to-one (food item belong to one category, but one category can have multiple food items). Then, copied both the collectionIds and pasted it in appwrite.ts.
+
+51. We are also creating customizations (adding french fries, toppings, changing base) as separate collections since that can be used across multiple restaurants & food items. We have added name, price and type of the customization (base, toppings, sauce, side, etc.,) and copy pasted the collectionId in appwrite.ts. This customizations collection will be in a many-to-many relationship. Some customizations only can apply only to burger but not to pizzas, others can belong to both. A menu item can have many customizations and a customization can belong to multiple food items. In relational modelling, the cleanest way to handle that is to introduce join table. In appwrite context, create a separate collection "menu_customizations" - its essentially a joined table, it will contain a pair - one will point to menu collection and one will point to customizations collection. We can dump the data inside the menu itself but as the app grows, or if we want to increase the price globally, then the code will be highly inconsistent to do that. So, this is a clean and scalable approach.
+
+52. We have created a bucket under Storage option in Appwrite and copy pasted the bucketId. Now we are going to do a concept called as seeding the database. Whenever we are creating a database, we need to seed the database (populate the DB with some data) so that it will be very helpful in visualizing the data. 
+
+53. Copy pasted two files seed.ts and data.ts from the youtuber's video page - [JS Mastery Asset Link](https://jsmastery.com/video-kit/d6633345-8797-4b96-8a4b-935618306d1d) and pasted them under lib folder. Then, added a snippet for adding a button which on click will trigger the seeding process. Was getting an error saying "AppwriteException: Network request failed". Then after hours of research and debugging by adding logs, solved that error by changing the type of fileObj from blob.type to "image/png". After the fix, triggering the seed process worked like charm! 
+
+    ```typescript
+    const fileObj = {
+        name: imageUrl.split("/").pop() || `file-${Date.now()}.jpg`,
+        type: blob.type --> "image/png",
+        size: blob.size,
+        uri: imageUrl,
+    };
+    ```
+
+54. We are going to design and develop the Search Screen now. Head over to AppWrite, create an index for the menu collection. We have created an index at menu collection with Full Text, and name as the key with ascending order. Then, we have created two methods: getMenu and getCategories in the appwrite.ts file and then we have created a custom hook to call a HTTP method named as useAppwrite and we have added that hook in search.tsx and called getMenu. It accepts two params, category and query and we are added useEffect and refetch function to pull data again whenever either of these two params changes. 
+
+55. Then, we have added UI for search component, by adding Cart Button component, some texts and then menu card component's basic layout in search.tsx file. We are going to create a new component for menu item and going to place it in search page's flatlist.

@@ -1,5 +1,5 @@
-import { CreateUserParams, SignInParams } from "@/type";
-import { Account, Avatars, Client, Databases, ID, Query } from "react-native-appwrite";
+import { CreateUserParams, GetMenuParams, SignInParams } from "@/type";
+import { Account, Avatars, Client, Databases, ID, Query, Storage } from "react-native-appwrite";
 
 export const appwriteConfig = {
     // Adding ! at the end of the environment variables to ensure they are not undefined
@@ -8,7 +8,12 @@ export const appwriteConfig = {
     platform: "com.rn.foodorder",
     project: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!, // Your Appwrite project
     databaseId: "6886cafd00062f837dde",
+    bucketId: "688c38040010b4ecec98",
     userCollectionId: "6886cb29000ff7522387",
+    categoriesCollectionId: "688c1e6b000115cad037",
+    menuCollectionId: "688c1f9f0036d93e3bf0",
+    customizationsCollectionId: "688c20f8002c96db7631",
+    menuCustomizationsCollectionId: "688c35a00029edecb53e",
 }
 
 export const client = new Client();
@@ -19,7 +24,8 @@ client
     .setPlatform(appwriteConfig.platform);
 
 export const account = new Account(client);
-export const database = new Databases(client);
+export const databases = new Databases(client);
+export const storage = new Storage(client);
 // User Avatars
 export const avatars = new Avatars(client);
 
@@ -42,7 +48,7 @@ export const createUser = async ({ name, email, password }: CreateUserParams) =>
         const avatarUrl = await avatars.getInitialsURL(name);
 
         // Creating a new user document in the database
-        const newUser = await database.createDocument(
+        const newUser = await databases.createDocument(
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
             ID.unique(),
@@ -75,22 +81,60 @@ export const getCurrentUser = async () => {
     try {
         // Get the current user session
         const currentAccount = await account.get();
-        
+
         if (!currentAccount) throw Error;
-        
+
         // Fetch the user document from the database
-        const currentUser = await database.listDocuments(
+        const currentUser = await databases.listDocuments(
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
             // Filtering the user document by accountId using Query.equal
             [Query.equal("accountId", currentAccount.$id)],
         );
-        
+
         if (!currentUser) throw Error;
 
         return currentUser.documents[0];
     } catch (e) {
         console.error("Error getting current user:", e);
         throw new Error(e as string || "Failed to get current user");
+    }
+}
+
+export const getMenu = async ({ category, query }: GetMenuParams) => {
+    try {
+        // If category is 'all' or empty string, ignore category filter
+        const actualCategory = !category || category === 'all' ? undefined : category;
+        const queries: string[] = [];
+
+        // If category is provided, add a query to filter by category
+        if (actualCategory) queries.push(Query.equal("categories", actualCategory));
+        // If query is provided, add a query to search by name
+        if (query) queries.push(Query.search("name", query));
+
+        // Fetch the menu items from the database with the specified queries
+        const menus = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.menuCollectionId,
+            queries
+        );
+        return menus.documents;
+    } catch (error) {
+        console.error("Error fetching menu:", error);
+        throw new Error(error as string || "Failed to fetch menu");
+    }
+}
+
+export const getCategories = async () => {
+    try {
+        // Fetch the categories from the database
+        const categories = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.categoriesCollectionId
+        );
+        return categories.documents;
+    } catch (error) {
+        console.error("Error fetching categories:", error);
+        throw new Error(error as string || "Failed to fetch categories");
     }
 }
